@@ -59,12 +59,12 @@ const ALLOWED_MODELS = [
 function mapGeminiModelToGroq(geminiModel: string): string {
   const modelMap: Record<string, string> = {
     'gemini-flash-lite-latest': 'llama-3.1-8b-instant',
-    'gemini-3-flash-preview': 'llama-3.1-70b-versatile',
-    'gemini-3-pro-preview': 'llama-3.1-70b-versatile',
-    'gemini-1.5-flash': 'llama-3.1-70b-versatile',
+    'gemini-3-flash-preview': 'llama-3.3-70b-versatile',
+    'gemini-3-pro-preview': 'llama-3.3-70b-versatile',
+    'gemini-1.5-flash': 'llama-3.3-70b-versatile',
     'gemini-1.5-pro': 'mixtral-8x7b-32768',
   };
-  return modelMap[geminiModel] || 'llama-3.1-70b-versatile';
+  return modelMap[geminiModel] || 'llama-3.3-70b-versatile';
 }
 
 function isValidModel(model: string): boolean {
