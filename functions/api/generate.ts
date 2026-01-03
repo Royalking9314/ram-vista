@@ -17,6 +17,35 @@ interface GenerateRequest {
   newMessage?: string;
 }
 
+interface GeminiRequestBody {
+  contents: Array<{
+    role?: string;
+    parts: Array<{ text: string }>;
+  }>;
+  systemInstruction?: {
+    parts: Array<{ text: string }>;
+  };
+  generationConfig?: {
+    temperature: number;
+    topP: number;
+    topK: number;
+    maxOutputTokens: number;
+  };
+}
+
+// Whitelist of allowed Gemini models for security
+const ALLOWED_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3-flash-preview',
+  'gemini-3-pro-preview',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+];
+
+function isValidModel(model: string): boolean {
+  return ALLOWED_MODELS.includes(model);
+}
+
 export async function onRequest(context: { request: Request; env: Env }) {
   const { request, env } = context;
 
@@ -40,6 +69,17 @@ export async function onRequest(context: { request: Request; env: Env }) {
   try {
     const body: GenerateRequest = await request.json();
     const { model, systemInstruction, userPrompt, isComplex, stream, history, newMessage } = body;
+
+    // Validate model against whitelist
+    if (!isValidModel(model)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid model specified' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Handle streaming chat requests
     if (stream && history && newMessage) {
@@ -71,7 +111,7 @@ async function handleGeneration(
   isComplex: boolean | undefined
 ): Promise<Response> {
   // Build request body for Gemini API
-  const requestBody: any = {
+  const requestBody: GeminiRequestBody = {
     contents: [
       {
         parts: [{ text: userPrompt }]
@@ -96,7 +136,7 @@ async function handleGeneration(
     };
   }
 
-  // Call Gemini API
+  // Call Gemini API (model is already validated)
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   
   const geminiResponse = await fetch(geminiUrl, {
@@ -159,7 +199,7 @@ async function handleStreamingChat(
     }
   ];
 
-  const requestBody: any = {
+  const requestBody: GeminiRequestBody = {
     contents
   };
 
@@ -169,7 +209,7 @@ async function handleStreamingChat(
     };
   }
 
-  // Call Gemini streaming API
+  // Call Gemini streaming API (model is already validated)
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`;
   
   const geminiResponse = await fetch(geminiUrl, {

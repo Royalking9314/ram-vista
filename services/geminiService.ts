@@ -3,11 +3,6 @@ import { GEMINI_MODELS } from "../constants.ts";
 // API endpoint for Cloudflare Pages Function
 const API_ENDPOINT = '/api/generate';
 
-export const checkApiKey = (): boolean => {
-  // Always return true since API key is checked server-side
-  return true;
-};
-
 export const generateQuickResponse = async (prompt: string): Promise<string> => {
    try {
      const response = await fetch(API_ENDPOINT, {
