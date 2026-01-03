@@ -13,7 +13,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1YHuRQZjH5cPenKuTS-UAMt
 ## Features
 
 - 📊 Real-time memory monitoring dashboard
-- 🤖 AI-powered artifact generation (System Architecture, Code, Pitches) 
+- 🤖 AI-powered artifact generation (System Architecture, Code, Pitches)
 - 💬 Interactive AI assistant for technical questions
 - 🎨 Dark/Light theme support
 - 📱 Responsive design
