@@ -34,7 +34,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1YHuRQZjH5cPenKuTS-UAMt
 
 3. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-> **Note:** AI features require a Gemini API key. When running locally, you can use a local proxy or deploy to Cloudflare Pages for full functionality.
+> **Note:** AI features require an API key (Groq or Gemini). When running locally, you can use a local proxy or deploy to Cloudflare Pages for full functionality.
 
 ## Deploy to Cloudflare Pages
 
@@ -43,7 +43,18 @@ This app is designed to be deployed on Cloudflare Pages with serverless Function
 ### Prerequisites
 
 - Cloudflare account
-- Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- **Groq API key (Recommended - FREE):** [Get from Groq Console](https://console.groq.com/keys)
+- **OR Gemini API key:** [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### Why Groq? (Recommended)
+
+- ✅ **Completely FREE** - No credit card required
+- ✅ **10x faster inference** - Optimized LPU infrastructure
+- ✅ **Higher rate limits:**
+  - 14,400 requests/day (vs Gemini's 1,500)
+  - 30 requests/minute (vs Gemini's 15)
+- ✅ **No RESOURCE_EXHAUSTED errors**
+- ✅ **High-quality models** - Llama 3.1 70B, Mixtral 8x7B
 
 ### Deployment Steps
 
@@ -57,10 +68,25 @@ This app is designed to be deployed on Cloudflare Pages with serverless Function
    - Build output directory: `dist`
    - Root directory: `/`
 
-3. **Set Environment Variable:**
+3. **Set Environment Variables:**
+
+   **Option 1: Use Groq (Recommended - Free & Fast)**
    - Go to Settings → Environment variables
-   - Add variable: `GEMINI_API_KEY` = `your_api_key_here`
+   - Add variable: `AI_PROVIDER` = `groq`
+   - Add variable: `GROQ_API_KEY` = `gsk_your_groq_api_key_here`
+   - Get your free Groq API key: https://console.groq.com/keys
    - Set for both Production and Preview environments
+
+   **Option 2: Use Gemini**
+   - Go to Settings → Environment variables
+   - Add variable: `AI_PROVIDER` = `gemini`
+   - Add variable: `GEMINI_API_KEY` = `your_gemini_api_key_here`
+   - Set for both Production and Preview environments
+
+   **Option 3: Use Both (Groq primary with Gemini fallback)**
+   - Add variable: `AI_PROVIDER` = `groq`
+   - Add variable: `GROQ_API_KEY` = `gsk_your_groq_api_key`
+   - Add variable: `GEMINI_API_KEY` = `your_gemini_api_key` (optional fallback)
 
 4. **Deploy:**
    - Click "Save and Deploy"
@@ -68,11 +94,11 @@ This app is designed to be deployed on Cloudflare Pages with serverless Function
 
 ### How It Works
 
-The app uses Cloudflare Pages Functions (serverless API endpoints) to securely handle Gemini API calls:
+The app uses Cloudflare Pages Functions (serverless API endpoints) to securely handle AI API calls:
 
 - **Client-side:** React app makes requests to `/api/generate`
-- **Server-side:** Cloudflare Function (`/functions/api/generate.ts`) calls Gemini API with the secure API key
-- **Security:** API key is never exposed to the browser or client-side code
+- **Server-side:** Cloudflare Function (`/functions/api/generate.ts`) calls Groq or Gemini API based on `AI_PROVIDER`
+- **Security:** API keys are never exposed to the browser or client-side code
 
 ## Architecture
 
@@ -87,13 +113,15 @@ The app uses Cloudflare Pages Functions (serverless API endpoints) to securely h
 │ Cloudflare Pages        │
 │ Function: /api/generate │
 │ (Server-side)           │
+│ • AI_PROVIDER routing   │
 └────────┬────────────────┘
-         │ GEMINI_API_KEY (secure)
+         │ API_KEY (secure)
          ▼
-┌─────────────────┐
-│  Gemini API     │
-│  (Google)       │
-└─────────────────┘
+    ┌────────┐
+    │ Groq   │ (recommended - free, fast)
+    │   OR   │
+    │ Gemini │ (alternative)
+    └────────┘
 ```
 
 ## Development
@@ -117,7 +145,7 @@ npm run preview
 - **Icons:** Lucide React
 - **Build Tool:** Vite
 - **Deployment:** Cloudflare Pages
-- **AI:** Google Gemini API
+- **AI:** Groq API (recommended) or Google Gemini API
 
 ## License
 

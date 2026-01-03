@@ -6,6 +6,13 @@ export const GEMINI_MODELS = {
   COMPLEX: 'gemini-3-pro-preview', // For coding/thinking
 };
 
+export const GROQ_MODELS = {
+  FAST: 'llama-3.1-8b-instant',
+  STANDARD: 'llama-3.1-70b-versatile',
+  COMPLEX: 'llama-3.1-70b-versatile',
+  LARGE_CONTEXT: 'mixtral-8x7b-32768',
+};
+
 // Added missing GENERATOR_PROMPTS configurations
 export const GENERATOR_PROMPTS: Record<GeneratorType, PromptConfig> = {
   [GeneratorType.ARCHITECTURE]: {
