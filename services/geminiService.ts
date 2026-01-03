@@ -1,23 +1,30 @@
-import { GoogleGenAI, GenerateContentResponse, Chat } from "@google/genai";
 import { GEMINI_MODELS } from "../constants.ts";
 
-// Initialize AI using process.env.API_KEY directly
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-export const checkApiKey = (): boolean => {
-  return !!process.env.API_KEY;
-};
+// API endpoint for Cloudflare Pages Function
+const API_ENDPOINT = '/api/generate';
 
 export const generateQuickResponse = async (prompt: string): Promise<string> => {
-   if (!process.env.API_KEY) return "API Key missing.";
-   
    try {
-     const response = await ai.models.generateContent({
-       model: GEMINI_MODELS.FAST,
-       contents: prompt
+     const response = await fetch(API_ENDPOINT, {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         model: GEMINI_MODELS.FAST,
+         userPrompt: prompt,
+         isComplex: false
+       }),
      });
-     // Access the text property directly on the response object.
-     return response.text || "";
+
+     if (!response.ok) {
+       const errorData = await response.json();
+       console.error("API Error:", errorData);
+       return "Error generating response.";
+     }
+
+     const data = await response.json();
+     return data.text || "";
    } catch (error) {
      console.error("Gemini Quick Response Error", error);
      return "Error generating response.";
@@ -30,20 +37,28 @@ export const generateArtifact = async (
   userPrompt: string,
   isComplex: boolean
 ): Promise<string> => {
-  if (!process.env.API_KEY) return "API Key missing.";
-
   try {
-    const response = await ai.models.generateContent({
-      model: model,
-      contents: userPrompt,
-      config: {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model,
         systemInstruction: systemInstruction,
-        // Set thinking budget for reasoning capabilities in Pro models.
-        thinkingConfig: isComplex ? { thinkingBudget: 4000 } : undefined
-      }
+        userPrompt: userPrompt,
+        isComplex: isComplex
+      }),
     });
-    // Access the text property directly on the response object.
-    return response.text || "";
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API Error:", errorData);
+      return "Error generating content.";
+    }
+
+    const data = await response.json();
+    return data.text || "";
   } catch (error) {
     console.error("Gemini Artifact Generation Error", error);
     return "Error generating content.";
@@ -54,28 +69,64 @@ export const streamChatResponse = async function* (
   history: { role: string; parts: { text: string }[] }[],
   newMessage: string
 ): AsyncGenerator<string, void, unknown> {
-  if (!process.env.API_KEY) {
-    yield "API Key missing in environment variables.";
-    return;
-  }
-
   try {
-    // Correctly using Chat type and chats.create method.
-    const chat: Chat = ai.chats.create({
-      model: GEMINI_MODELS.STANDARD,
-      history: history,
-      config: {
+    const response = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: GEMINI_MODELS.STANDARD,
         systemInstruction: "You are a helpful assistant for the 'RAM Vista' project. You help the user understand memory virtualization, Linux kernels, and Redis.",
-      }
+        history: history,
+        newMessage: newMessage,
+        stream: true
+      }),
     });
 
-    const result = await chat.sendMessageStream({ message: newMessage });
+    if (!response.ok) {
+      yield "An error occurred while communicating with Gemini.";
+      return;
+    }
 
-    for await (const chunk of result) {
-      const response = chunk as GenerateContentResponse;
-      // Access the text property on the response chunk during streaming.
-      if (response.text) {
-        yield response.text;
+    // Handle streaming response
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      yield "Error: Unable to read response stream.";
+      return;
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const jsonStr = line.slice(6); // Remove 'data: ' prefix
+            if (jsonStr.trim() === '[DONE]') continue;
+            
+            const data = JSON.parse(jsonStr);
+            
+            // Extract text from Gemini streaming response format
+            if (data.candidates && data.candidates[0]?.content?.parts) {
+              const text = data.candidates[0].content.parts
+                .map((part: any) => part.text || '')
+                .join('');
+              if (text) {
+                yield text;
+              }
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
+            console.debug('Skipping line:', line);
+          }
+        }
       }
     }
   } catch (error) {
