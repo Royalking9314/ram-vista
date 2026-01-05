@@ -8,8 +8,6 @@ A modern monitoring and control interface for RAM Vista, a system that virtualiz
 
 🚀 **Live Demo:** https://ram-vista.pages.dev
 
-View your app in AI Studio: https://ai.studio/apps/drive/1YHuRQZjH5cPenKuTS-UAMtbKuIX8Ph4E
-
 ## Features
 
 - 📊 Real-time memory monitoring dashboard
